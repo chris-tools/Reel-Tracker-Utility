@@ -336,45 +336,6 @@ button:disabled{
   transform: translateY(1px);
 }
 
-
-.lastScannedValue{
-  font-size: 14px;
-  line-height: 1.2;
-  color: #6b7280;
-  padding: 12px 46px 12px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-  width: 100%;
-  display: block;
-}
-.lastScannedField{
-  position: relative;
-  width: 100%;
-}
-.lastScannedField{
-  margin-top: 10px;
-}
-
-.lastScannedClear{
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  font-size: 16px;
-  line-height: 1;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .list{
   min-height: 44px;
   background: rgba(255,255,255,0.06);
@@ -629,4 +590,13 @@ button:disabled{
   text-align: center;
   margin-top: 18px;
   opacity: 0.9;
+}
+/* Mid-session Scan Next emphasis */
+#startScan.midSession {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.35);
+  transform: scale(1.04);
 }
