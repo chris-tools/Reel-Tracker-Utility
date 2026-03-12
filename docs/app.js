@@ -4,11 +4,29 @@
   // Mode buttons
   const modePickupBtn = $('modePickupBtn');
   const modeReturnBtn = $('modeReturnBtn');
+  const modeIncomingBtn = $('modeIncomingBtn');
   
-  // Sections
+  // Section
   const pickupSection = $('pickupSection');
   const returnSection = $('returnSection');
   const scanSection = $('scanSection');
+  const incomingSection = $('incomingSection');
+
+  // Incoming / New fields
+const incomingState = $('incomingState');
+const incomingYard = $('incomingYard');
+const incomingBaba = $('incomingBaba');
+const incomingIntakeCard = $('incomingIntakeCard');
+
+const incomingGoScan = $('incomingGoScan');
+const incomingManualReelInput = $('incomingManualReelInput');
+const incomingManualAddBtn = $('incomingManualAddBtn');
+
+const incomingReelList = $('incomingReelList');
+const incomingReelCount = $('incomingReelCount');
+
+const incomingNotes = $('incomingNotes');
+const incomingExport = $('incomingExport');
 
   // Pickup fields
   const techName = $('techName');
@@ -16,8 +34,7 @@
   const build = $('build');
   const pickupGoScan = $('pickupGoScan');
 
-  // Return fields
-  // Return fields
+   // Return fields
 const returnName = $('returnName');
 const returnCompany = $('returnCompany');
 const returnReelName = $('returnReelName');
@@ -43,8 +60,11 @@ const returnEntryWrap = $('returnEntryWrap');
   const copyAllReels = $('copyAllReels');
   const manualReelInput = $('manualReelInput');
   const manualAddBtn = $('manualAddBtn');
+  const incomingSummaryCard = $('incomingSummaryCard');
+  const incomingSummaryText = $('incomingSummaryText');
 
   const video = $('video');
+  const incomingScannerMount = $('incomingScannerMount');
   const banner = $('banner');
 
   const lastScannedValue = $('lastScannedValue');
@@ -69,6 +89,7 @@ const returnEntryWrap = $('returnEntryWrap');
 
   let lastScan = '';
   let sessionReels = []; // keep order
+  let incomingReels = [];
   let sessionSet = new Set();
   let armed = false; // one scan per tap
   
@@ -119,6 +140,27 @@ function hideUndo(){
   function normalize(s){
     return String(s || '').trim().toUpperCase();
   }
+
+  function showIncomingSummary(){
+  if(!incomingSummaryCard || !incomingSummaryText) return;
+
+  const st = (incomingState?.value || '').trim();
+  const yd = (incomingYard?.value || '').trim();
+  const bb = (incomingBaba?.value || '').trim();
+
+  incomingSummaryText.innerHTML = `
+    <div><b>Storage State:</b> ${st || '—'}</div>
+    <div><b>Storage Yard:</b> ${yd || '—'}</div>
+    <div><b>BABA?:</b> ${bb || '—'}</div>
+  `;
+
+  incomingSummaryCard.hidden = false;
+}
+
+function hideIncomingSummary(){
+  if(incomingSummaryCard) incomingSummaryCard.hidden = true;
+  if(incomingSummaryText) incomingSummaryText.textContent = '';
+}
 
   // Reel name: allow letters+numbers, hyphen, slash. 7-20 chars.
   function looksLikeReelName(s){
@@ -376,7 +418,7 @@ const deviceId = preferred?.deviceId;
     div.className = 'item';
 
     const left = document.createElement('span');
-    left.textContent = `${entry.reel} — ${entry.total} ft`;
+    left.textContent = `${entry.fiber}ct — ${entry.reel} — ${entry.total} ft`;
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -534,9 +576,19 @@ function handleClearSessionClick(){
     return;
   }
 
+  if(mode === 'incoming'){
+  incomingReels.unshift(v);
+
+  const row = document.createElement('div');
+  row.textContent = v;
+  incomingReelList.appendChild(row);
+
+  incomingReelCount.textContent = `(${incomingReels.length})`;
+}else{
   sessionSet.add(v);
   sessionReels.unshift(v);
   renderSession();
+}
 
   setBanner('ok', 'Added to session');
   beep(2000, 120, 0.9);
@@ -859,10 +911,12 @@ function exportReturn(){
   // --- Mode switching ---
   function showMode(next){
     mode = next;
+    hideIncomingSummary();
 
     // reset UI
-    pickupSection.hidden = true;
-    returnSection.hidden = true;
+    pickupSection.hidden = mode !== 'pickup';
+    returnSection.hidden = mode !== 'return';
+    incomingSection.hidden = mode !== 'incoming';
     scanSection.hidden = true;
 
     stopCamera();
@@ -890,6 +944,25 @@ function exportReturn(){
   // --- Wiring ---
   modePickupBtn?.addEventListener('click', ()=>showMode('pickup'));
   modeReturnBtn?.addEventListener('click', ()=>showMode('return'));
+  modeIncomingBtn?.addEventListener('click', ()=>showMode('incoming'));
+  incomingManualAddBtn?.addEventListener('click', handleIncomingManualAdd);
+  incomingState?.addEventListener('input', updateIncomingAddState);
+  incomingYard?.addEventListener('input', updateIncomingAddState);
+  incomingBaba?.addEventListener('input', updateIncomingAddState);
+incomingGoScan?.addEventListener('click', ()=>{
+  // Move scanner under the Start Scanning button
+  if(incomingScannerMount){
+    incomingScannerMount.appendChild(scanSection);
+  }
+
+  if(incomingGoScan) incomingGoScan.hidden = true;  // <-- add this line
+ 
+  showIncomingSummary();
+  incomingIntakeCard.hidden = true;
+    
+  scanSection.hidden = false;
+  goScan();
+});
 
   techName?.addEventListener('input', updatePickupGo);
   company?.addEventListener('input', updatePickupGo);
@@ -903,7 +976,13 @@ function exportReturn(){
  // Return listeners
 returnName?.addEventListener('input', updateReturn);
 returnCompany?.addEventListener('input', updateReturn);
+
+returnReelName?.addEventListener('input', () => {
+  returnReelName.value = returnReelName.value.toUpperCase();
+});
+
 returnReelName?.addEventListener('input', updateReturn);
+
 fiberCount?.addEventListener('input', updateReturn);
 returnLocation?.addEventListener('input', updateReturn);
 insideFt?.addEventListener('input', updateReturn);
@@ -933,6 +1012,13 @@ wireAutoNext([
   outsideFt
 ]);
 
+  outsideFt?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    returnAdd?.click();
+  }
+});
+
  returnAdd?.addEventListener('click', ()=>{
   if(returnAdd.disabled) return;
 
@@ -947,7 +1033,7 @@ wireAutoNext([
     total: (totalFt?.value || '').trim()
   };
 
-  returnSession.push(entry);
+  returnSession.unshift(entry);
   renderReturnSession();
 
   // Clear only the per-reel fields for the next entry
@@ -962,7 +1048,7 @@ wireAutoNext([
   setBanner('ok', 'Added to return session');
 
   // Put cursor where Puff needs it next
-  returnReelName?.focus();
+  fiberCount?.focus();
 });
 
 returnExport?.addEventListener('click', ()=>{
@@ -988,6 +1074,12 @@ returnExport?.addEventListener('click', ()=>{
   // User hit Finished while scanning (or after). Cleanly reset UI state.
   armed = false;
   await stopCamera();
+   
+  if(mode === 'incoming'){
+  scanSection.hidden = true;
+  incomingSection.hidden = false;
+  hideIncomingSummary();
+}
 
   if(startScan){
     startScan.disabled = false;
@@ -1109,6 +1201,35 @@ function showHowtoForMode(modeName) {
   collapseHowtos();
 }
 
+  function updateIncomingAddState(){
+
+  const ready =
+    incomingState.value.trim() !== '' &&
+    incomingYard.value.trim() !== '' &&
+    incomingBaba.value.trim() !== '';
+
+    incomingGoScan.disabled = !ready;
+    incomingGoScan.hidden = !ready;
+}
+  
+  function handleIncomingManualAdd(){
+
+  const reel = incomingManualReelInput.value.trim();
+  if(!reel) return;
+
+  incomingReels.push(reel);
+
+  const row = document.createElement('div');
+  row.textContent = reel;
+  incomingReelList.appendChild(row);
+
+  incomingReelCount.textContent = `(${incomingReels.length})`;
+
+  incomingManualReelInput.value = '';
+
+  incomingExport.disabled = incomingReels.length === 0;
+}
+
   // Boot
   setIdleBanner();
   updatePickupGo();
@@ -1116,5 +1237,6 @@ function showHowtoForMode(modeName) {
   renderSession();
   updateManualAddState();
   renderReturnSession();
+  updateIncomingAddState();
 
 })();
