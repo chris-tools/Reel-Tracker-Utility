@@ -37,9 +37,12 @@ const incomingExport = $('incomingExport');
    // Return fields
 const returnName = $('returnName');
 const returnCompany = $('returnCompany');
+const returnSummaryCard = $('returnSummaryCard');
+const returnSummaryText = $('returnSummaryText');
 const returnReelName = $('returnReelName');
 const fiberCount = $('fiberCount');
 const returnLocation = $('returnLocation');
+const returnNext = $('returnNext');
 
 const insideFt = $('insideFt');
 const outsideFt = $('outsideFt');
@@ -62,6 +65,8 @@ const returnEntryWrap = $('returnEntryWrap');
   const manualAddBtn = $('manualAddBtn');
   const incomingSummaryCard = $('incomingSummaryCard');
   const incomingSummaryText = $('incomingSummaryText');
+  const pickupSummaryCard = $('pickupSummaryCard');
+  const pickupSummaryText = $('pickupSummaryText');
 
   const video = $('video');
   const incomingScannerMount = $('incomingScannerMount');
@@ -99,6 +104,7 @@ const returnEntryWrap = $('returnEntryWrap');
   let lastSeenValue = '';
   let lastSeenAt = 0;
   let cameraWarmupUntil = 0;
+  let scanningReturnReel = false;
 
   // Return session state (multi-reel)
 let returnSession = []; // array of entries for this trip/session
@@ -199,8 +205,33 @@ function updateReturn(){
   (returnCompany?.value.trim() || '') &&
   (returnLocation?.value.trim() || '');
 
+  if (returnNext) {
+  returnNext.hidden = !sessionOk;
+}
+
+  if (sessionOk) {
+
+  if (returnSummaryText) {
+    returnSummaryText.innerHTML = `
+      <div><span class="sessionLabel">Name:</span> <span class="sessionValue">${returnName.value}</span></div>
+      <div><span class="sessionLabel">Company / Garage:</span> <span class="sessionValue">${returnCompany.value}</span></div>
+      <div><span class="sessionLabel">Location:</span> <span class="sessionValue">${returnLocation.value}</span></div>
+    `;
+  }
+
+  if (returnSummaryCard) {
+    
+  }
+
+} else {
+
+  if (returnSummaryCard) {
+    returnSummaryCard.hidden = true;
+  }
+
+}
+
 // Progressive reveal
-if (returnEntryWrap) returnEntryWrap.hidden = !sessionOk;
 
 const entryOk =
   sessionOk &&
@@ -339,6 +370,25 @@ const deviceId = preferred?.deviceId;
           startScan.classList.add('midSession');
           return;
         }
+
+        // If scanning for Return reel name, fill the field instead
+if (scanningReturnReel) {
+
+  if (returnReelName) {
+    returnReelName.value = v;
+  }
+
+  scanningReturnReel = false;
+
+  stopCamera();
+  scanSection.hidden = true;
+
+  setBanner('ok', 'Reel scanned');
+
+  updateReturn();
+
+  return;
+}
 
         // Success (new reel)
         sessionSet.add(v);
@@ -933,9 +983,27 @@ function exportReturn(){
   }
 
   function goScan(keepPickupDetails = false){
+
   scanSection.hidden = false;
-  pickupSection.hidden = !keepPickupDetails;
   returnSection.hidden = true;
+
+  if(mode === 'pickup'){
+    
+    // Build Pickup Session Summary
+   pickupSummaryText.innerHTML = `
+<div><span class="sessionLabel">Name:</span> <span class="sessionValue">${techName.value}</span></div>
+<div><span class="sessionLabel">Company / Garage:</span> <span class="sessionValue">${company.value}</span></div>
+<div><span class="sessionLabel">Build / Assignment:</span> <span class="sessionValue">${build.value}</span></div>
+`;
+
+    pickupSummaryCard.hidden = false;
+
+    // Hide editable pickup card
+    pickupSection.hidden = true;
+
+  } else {
+    pickupSection.hidden = !keepPickupDetails;
+  }
 
   setIdleBanner();
   renderSession();
@@ -976,7 +1044,18 @@ incomingGoScan?.addEventListener('click', ()=>{
  // Return listeners
 returnName?.addEventListener('input', updateReturn);
 returnCompany?.addEventListener('input', updateReturn);
+  
+ returnNext?.addEventListener('click', () => {
 
+  const sessionCard = returnNext.closest('.card');
+  if (sessionCard) sessionCard.hidden = true;
+
+  if (returnSummaryCard) returnSummaryCard.hidden = false;
+
+  if (returnEntryWrap) returnEntryWrap.hidden = false;
+
+});
+ 
 returnReelName?.addEventListener('input', () => {
   returnReelName.value = returnReelName.value.toUpperCase();
 });

@@ -11,7 +11,6 @@
 </head>
 <body>
 
-  
   <header class="topbar">
       <div class="brand">
       <img id="brandLogo" src="icon-1.png" alt="Reel Tracking Utility icon" />
@@ -25,7 +24,7 @@
 </div>
     <button id="installBtn" class="ghost" hidden>Add to Home Screen</button>
   </header>
-     <a href="index.html" class="backBtn">← Mode Selection</a>
+     <a href="index.html" class="backBtn">← Main Page</a>
   <main class="container">
 
     <!-- ===== PICKUP / DELIVER ===== -->
@@ -60,9 +59,14 @@
 <section id="returnSection" class="card">
   <h2>Return details</h2>
 
+  <div id="returnSummaryCard" class="card" hidden style="margin-top:10px;">
+  <h3 style="margin-top:0;">Return Session</h3>
+  <div id="returnSummaryText" style="line-height:1.5;"></div>
+</div>
+
   <!-- Session Info (always first) -->
   <div class="card" style="margin-top:10px;">
-    <h3 style="margin-top:0;">Session info</h3>
+    <h3 style="margin-top:0;">Return Session Details</h3>
 
     <div class="grid2">
       <div class="field">
@@ -80,14 +84,19 @@
         <input id="returnLocation" type="text" placeholder="Required" />
       </div>
     </div>
-  </div>
+
+      <div class="row">
+    <button id="returnNext" class="primary bigAction" hidden>
+       Next
+    </button>
+      </div>
+        </div>
 
   <!-- Hidden until session info filled -->
-  <div id="returnEntryWrap" hidden>
+  <div id="returnEntryWrap" class="card" hidden>
 
-    <!-- Reel Entry -->
-    <div class="card" style="margin-top:14px;">
-      <h3 style="margin-top:0;">Return entry</h3>
+  <!-- Reel Entry -->
+  <h3 style="margin-top:0;">Return entry</h3>
 
       <div class="grid2">
        <div class="field">
@@ -95,11 +104,14 @@
        <input id="fiberCount" type="number" inputmode="numeric" min="0" step="1" placeholder="Required" />
     </div>
 
-      <div class="field full">
-       <label for="returnReelName">Reel Name</label>
-       <input id="returnReelName" type="text" placeholder="Required" />
-    </div>
+    <div class="field full">
+  <label for="returnReelName">Reel Name</label>
 
+  <div class="row">
+  <input id="returnReelName" type="text" placeholder="Required" />
+</div>
+
+   
         <div class="field">
           <label for="insideFt">Inside Footage (Enter 0 if empty)</label>
           <input id="insideFt" type="number" inputmode="numeric" min="0" step="1" placeholder="Required" />
@@ -119,7 +131,6 @@
       <div class="row">
         <button id="returnAdd" class="secondary bigAction" disabled>Add</button>
       </div>
-    </div>
 
     <!-- Summary + Done -->
     <div class="card" style="margin-top:14px;">
@@ -334,7 +345,7 @@
 </section>
 
     <footer class="foot">
-      <span>v3.1 • RTU • Distribution in Motion</span>
+      <span>v4.0 • RTU • Distribution in Motion</span>
     </footer>
 
   </main>
