@@ -48,6 +48,7 @@ const outsideFt = $('outsideFt');
 const totalFt = $('totalFt');
 const returnExport = $('returnExport');
 const returnAdd = $('returnAdd');
+const copyReturnEmail = $('copyReturnEmail');
 const returnSessionList = $('returnSessionList');
 const returnSessionCount = $('returnSessionCount');
 const returnEntryWrap = $('returnEntryWrap');
@@ -61,6 +62,7 @@ const returnEntryWrap = $('returnEntryWrap');
   ? $('incomingClearSession')
   : $('clearSession');
   const exportPickupCsv = $('exportPickupCsv');
+  const copyEmailBtn = $('copyEmailBtn');
   const incomingExport = document.getElementById('incomingExport');
   const copyAllReels = $('copyAllReels');
   const manualReelInput = $('manualReelInput');
@@ -247,6 +249,7 @@ const entryOk =
 
   // Done (Export) is enabled when there's at least 1 entry in the session
   if (returnExport) returnExport.disabled = !(returnSession.length > 0);
+  if (copyReturnEmail) copyReturnEmail.disabled = !(returnSession.length > 0);
 }
 
   function updateScanUI(){
@@ -255,6 +258,7 @@ const entryOk =
     const hasAny = sessionReels.length > 0;
     exportPickupCsv.disabled = !(hasAny && mode === 'pickup');
     clearSession.disabled = !hasAny;
+    copyEmailBtn.disabled = !hasAny;
 
     reelCount.textContent = `(${sessionReels.length})`;
   }
@@ -1225,6 +1229,29 @@ returnExport?.addEventListener('click', ()=>{
   exportReturn();
 });
 
+  returnExport?.addEventListener('click', ()=>{
+  if(returnExport.disabled) return;
+  exportReturn();
+});
+
+copyReturnEmail?.addEventListener('click', () => {
+  const email = 'chris.gagnon@fidium.com';
+
+  navigator.clipboard.writeText(email).then(() => {
+
+    // Visual feedback (checkmark)
+    const originalText = copyReturnEmail.textContent;
+    copyReturnEmail.textContent = '✔ Copied';
+
+    setTimeout(() => {
+      copyReturnEmail.textContent = originalText;
+    }, 1200);
+
+  }).catch(() => {
+    setBanner('bad', 'Clipboard copy failed');
+  });
+});
+
 
  startScan?.addEventListener('click', async ()=>{
   startScan.disabled = true;
@@ -1290,6 +1317,29 @@ returnExport?.addEventListener('click', ()=>{
   incomingExport?.addEventListener('click', ()=>{
   if(incomingExport.disabled) return;
   exportIncoming();
+});
+  
+  copyEmailBtn?.addEventListener('click', () => {
+
+  const email = 'chris.gagnon@fidium.com';
+
+  navigator.clipboard?.writeText(email).then(() => {
+
+    setBanner('ok', 'Email address copied');
+
+   // 🔹 TAU-style feedback
+copyEmailBtn.textContent = 'Copied ✓';
+copyEmailBtn.classList.add('copied');
+
+setTimeout(() => {
+  copyEmailBtn.textContent = 'Copy Email';
+  copyEmailBtn.classList.remove('copied');
+}, 1500);
+
+  }).catch(() => {
+    setBanner('bad', 'Copy failed');
+  });
+
 });
 
   undoBtn?.addEventListener('click', () => {
@@ -1396,15 +1446,11 @@ function showHowtoForMode(modeName) {
   if(!reel) return;
 
   incomingReels.push(reel);
-
   const row = document.createElement('div');
   row.textContent = reel;
   incomingReelList.appendChild(row);
-
   incomingReelCount.textContent = `(${incomingReels.length})`;
-
   incomingManualReelInput.value = '';
-
   incomingExport.disabled = incomingReels.length === 0;
 }
 

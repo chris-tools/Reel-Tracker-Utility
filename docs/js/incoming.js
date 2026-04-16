@@ -7,7 +7,7 @@
   const modeIncomingBtn = $('modeIncomingBtn');
   
   // Section
-  const pickupSection = $('pickupSection');
+  const pickupSection = $('incomingSection');
   const returnSection = $('returnSection');
   const scanSection = $('scanSection');
   const incomingSection = $('incomingSection');
@@ -62,6 +62,7 @@ const returnEntryWrap = $('returnEntryWrap');
   : $('clearSession');
   const exportPickupCsv = $('exportPickupCsv');
   const incomingExport = document.getElementById('incomingExport');
+  const copyIncomingEmail = $('copyIncomingEmail');
   const copyAllReels = $('copyAllReels');
   const manualReelInput = $('manualReelInput');
   const manualAddBtn = $('manualAddBtn');
@@ -87,7 +88,7 @@ const returnEntryWrap = $('returnEntryWrap');
    const undoBtn  = $('undoBtn');
 
   // State
-  let mode = window.currentMode || 'pickup';
+  let mode = 'incoming';
   let scanner = null;
   let cameraStream = null;
   let streamTrack = null;
@@ -156,11 +157,9 @@ function hideUndo(){
   const yd = (incomingYard?.value || '').trim();
   const bb = (incomingBaba?.value || '').trim();
 
-  incomingSummaryText.innerHTML = `
-    <div><b>Storage State:</b> ${st || '—'}</div>
-    <div><b>Storage Yard:</b> ${yd || '—'}</div>
-    <div><b>BABA?:</b> ${bb || '—'}</div>
-  `;
+ incomingSummaryText.innerHTML = `
+  <div><b>Storage Yard:</b> ${yd || '—'}</div>
+`;
 
   incomingSummaryCard.hidden = false;
 }
@@ -179,10 +178,12 @@ function hideIncomingSummary(){
   }
 
 function updatePickupGo(){
+  if (!techName || !company || !build || !pickupGoScan) return;
+
   const ok =
-    techName?.value.trim() &&
-    company?.value.trim() &&
-    build?.value.trim();
+    techName.value.trim() &&
+    company.value.trim() &&
+    build.value.trim();
 
   pickupGoScan.disabled = !ok;
   pickupGoScan.hidden = !ok;
@@ -253,7 +254,8 @@ const entryOk =
    if (dismissLastScanned) dismissLastScanned.disabled = !lastScan;
 
     const hasAny = sessionReels.length > 0;
-    exportPickupCsv.disabled = !(hasAny && mode === 'pickup');
+    if (copyIncomingEmail) copyIncomingEmail.disabled = !hasAny;
+    exportPickupCsv.disabled = !hasAny;
     clearSession.disabled = !hasAny;
 
     reelCount.textContent = `(${sessionReels.length})`;
@@ -395,17 +397,9 @@ if (scanningReturnReel) {
 
   if (mode === 'incoming') {
 
-  incomingReels.unshift(v);
-
-  const row = document.createElement('div');
-  row.textContent = v;
-  incomingReelList.appendChild(row);
-
-  incomingReelCount.textContent = `(${incomingReels.length})`;
-
-  if (incomingExport) {
-    incomingExport.disabled = incomingReels.length === 0;
-  }
+ sessionSet.add(v);
+sessionReels.unshift(v);
+renderSession();
 
 } else {
 
@@ -422,7 +416,7 @@ if (scanningReturnReel) {
         startScan.disabled = false;
         startScan.textContent = 'Scan Next';
         startScan.classList.add('midSession');
-        armed = true;
+        armed = false;
       });
 
       // Grab underlying stream for torch support
@@ -647,19 +641,9 @@ function handleClearSessionClick(){
     return;
   }
 
-  if(mode === 'incoming'){
-  incomingReels.unshift(v);
-
-  const row = document.createElement('div');
-  row.textContent = v;
-  incomingReelList.appendChild(row);
-
-  incomingReelCount.textContent = `(${incomingReels.length})`;
-}else{
-  sessionSet.add(v);
-  sessionReels.unshift(v);
-  renderSession();
-}
+ sessionSet.add(v);
+sessionReels.unshift(v);
+renderSession();
 
   setBanner('ok', 'Added to session');
   beep(2000, 120, 0.9);
@@ -727,11 +711,11 @@ function updateManualAddState(){
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
   }
 
- function mmddyyyy(d){
-  const mm = d.getMonth() + 1;       // no padStart
-  const dd = d.getDate();            // no padStart
-  const yy = String(d.getFullYear()).slice(-2); // last 2 digits
-  return `${mm}/${dd}/${yy}`;
+function mmddyyyy(d){
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
 }
 
  function exportPickup() {
@@ -875,7 +859,7 @@ function exportIncoming() {
   const now = new Date();
 
   const headers = [
-    "Mode","Name","Storage State","Storage Yard","Date Received",
+    "Storage State","Storage Yard","Date Received",
     "Reel ID #","Size","Footage","BABA?","Manufacturer",
     "Assigned Y/N","Date Assigned","State Assigned","Assignment",
     "Contractor","Field Bin Y/N","Picked Up Y/N","Date Picked Up",
@@ -884,37 +868,81 @@ function exportIncoming() {
 
   const data = [headers];
 
-  for (const reel of incomingReels) {
+  for (const reel of sessionReels) {
     data.push([
-      "Incoming",
-      null,
-      incomingState.value,
-      incomingYard.value.trim(),
-      mmddyyyy(now),
-      reel,
-      null,
-      null,
-      incomingBaba.value,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      "",                              // A  Storage State
+      incomingYard.value.trim(),       // B  Storage Yard
+      mmddyyyy(now),                   // C  Date Received
+      reel,                            // D  Reel ID #
+      "", "", "", "",                  // E–H
+      "", "", "", "",                  // I–L
+      "", "", "", "",                  // M–P
+      "", "", ""                       // Q–S
     ]);
   }
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "RTU Incoming");
 
-  const filename = `RTU_${mmddyyyy(now)}_Incoming.xlsx`;
+  const thin = { style: "thin", color: { rgb: "000000" } };
+
+  const headerStyle = {
+    fill: { fgColor: { rgb: "1F2E44" } },
+    font: { color: { rgb: "FFFFFF" }, bold: true },
+    alignment: { horizontal: "center", vertical: "center" },
+    border: { top: thin, bottom: thin, left: thin, right: thin }
+  };
+
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+
+  // Header row
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[addr]) ws[addr].s = headerStyle;
+  }
+
+  // Data rows
+  for (let r = 1; r <= range.e.r; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) continue;
+
+      ws[addr].s = {
+        alignment: { vertical: "center", horizontal: "left", wrapText: false },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" }
+        }
+      };
+    }
+
+    // Force Date Received column (C) to stay as text exactly as written
+    const dateAddr = XLSX.utils.encode_cell({ r, c: 2 });
+    if (ws[dateAddr]) {
+      ws[dateAddr].t = "s";
+    }
+  }
+
+  // Auto column width
+  const colWidths = new Array(headers.length).fill(10);
+
+  for (let c = 0; c < headers.length; c++) {
+    let maxLen = 0;
+    for (let r = 0; r < data.length; r++) {
+      const v = data[r][c];
+      const s = (v ?? "").toString();
+      maxLen = Math.max(maxLen, s.length);
+    }
+    colWidths[c] = Math.min(Math.max(10, maxLen + 2), 45);
+  }
+
+  ws["!cols"] = colWidths.map(wch => ({ wch }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Incoming");
+
+  const filename = `${mmddyyyy(now)}_Incoming.xlsx`;
 
   const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   const blob = new Blob([wbout], {
@@ -1109,17 +1137,13 @@ function exportReturn(){
   incomingYard?.addEventListener('input', updateIncomingAddState);
   incomingBaba?.addEventListener('input', updateIncomingAddState);
   incomingGoScan?.addEventListener('click', ()=>{
-  
-  if(incomingScannerMount){
-    incomingScannerMount.appendChild(scanSection);
-  }
 
   if(incomingGoScan) incomingGoScan.hidden = true;
- 
+    
   showIncomingSummary();
-  incomingIntakeCard.hidden = true;
     
   goScan();
+
 });
 
   techName?.addEventListener('input', updatePickupGo);
@@ -1245,16 +1269,7 @@ returnExport?.addEventListener('click', ()=>{
   armed = false;
   await stopCamera();
    
- if(mode === 'incoming'){
-  scanSection.hidden = true;
-
-  if(incomingIntakeCard) incomingIntakeCard.hidden = false;
-  if(incomingGoScan) incomingGoScan.hidden = false;
-
-  hideIncomingSummary();
-}
-
-  if(startScan){
+   if(startScan){
     startScan.disabled = false;
 
     // If we were mid-scan, reset the label so the user can start again
@@ -1263,7 +1278,7 @@ returnExport?.addEventListener('click', ()=>{
     }
     if (sessionReels.length === 0) {
   startScan.classList.remove('midSession');
-}
+    }
   }
 });
 
@@ -1285,11 +1300,23 @@ returnExport?.addEventListener('click', ()=>{
 });
 
   copyAllReels?.addEventListener('click', ()=>copyAll());
-  exportPickupCsv?.addEventListener('click', ()=>exportPickup());
-  
-  incomingExport?.addEventListener('click', ()=>{
-  if(incomingExport.disabled) return;
-  exportIncoming();
+  exportPickupCsv?.addEventListener('click', ()=>exportIncoming());
+
+  copyIncomingEmail?.addEventListener('click', () => {
+  const email = 'chris.gagnon@fidium.com';
+
+  navigator.clipboard.writeText(email).then(() => {
+
+    const originalText = copyIncomingEmail.textContent;
+    copyIncomingEmail.textContent = '✔ Copied';
+
+    setTimeout(() => {
+      copyIncomingEmail.textContent = originalText;
+    }, 1200);
+
+  }).catch(() => {
+    setBanner('bad', 'Clipboard copy failed');
+  });
 });
 
   undoBtn?.addEventListener('click', () => {
@@ -1381,10 +1408,8 @@ function showHowtoForMode(modeName) {
 
   function updateIncomingAddState(){
 
-  const ready =
-    incomingState.value.trim() !== '' &&
-    incomingYard.value.trim() !== '' &&
-    incomingBaba.value.trim() !== '';
+    const ready =
+    incomingYard.value.trim() !== '';
 
     incomingGoScan.disabled = !ready;
     incomingGoScan.hidden = false;
