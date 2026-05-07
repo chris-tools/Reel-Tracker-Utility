@@ -34,13 +34,11 @@ const incomingNotes = $('incomingNotes');
   const pickupGoScan = $('pickupGoScan');
 
    // Return fields
-const returnName = $('returnName');
 const returnCompany = $('returnCompany');
 const returnSummaryCard = $('returnSummaryCard');
 const returnSummaryText = $('returnSummaryText');
 const returnReelName = $('returnReelName');
 const fiberCount = $('fiberCount');
-const returnLocation = $('returnLocation');
 const returnNext = $('returnNext');
 
 const insideFt = $('insideFt');
@@ -203,9 +201,7 @@ function updateReturn(){
   }
 
   const sessionOk =
-  (returnName?.value.trim() || '') &&
-  (returnCompany?.value.trim() || '') &&
-  (returnLocation?.value.trim() || '');
+  (returnCompany?.value.trim() || '');
 
   if (returnNext) {
   returnNext.hidden = !sessionOk;
@@ -215,10 +211,8 @@ function updateReturn(){
 
   if (returnSummaryText) {
     returnSummaryText.innerHTML = `
-      <div><span class="sessionLabel">Name:</span> <span class="sessionValue">${returnName.value}</span></div>
-      <div><span class="sessionLabel">Company / Garage:</span> <span class="sessionValue">${returnCompany.value}</span></div>
-      <div><span class="sessionLabel">Location:</span> <span class="sessionValue">${returnLocation.value}</span></div>
-    `;
+  <div><span class="sessionLabel">Company / Garage:</span> <span class="sessionValue">${returnCompany.value}</span></div>
+`;
   }
 
   if (returnSummaryCard) {
@@ -247,8 +241,11 @@ const entryOk =
 
   // Done (Export) is enabled when there's at least 1 entry in the session
   if (returnExport) returnExport.disabled = !(returnSession.length > 0);
-  if (copyReturnEmail) copyReturnEmail.disabled = !(returnSession.length > 0);
-}
+  const copyReturnEmail = $('copyReturnEmail');
+if (copyReturnEmail) {
+  copyReturnEmail.disabled = !(returnSession.length > 0);
+  }
+ }
 
   function updateScanUI(){
    if (dismissLastScanned) dismissLastScanned.disabled = !lastScan;
@@ -945,29 +942,27 @@ function exportReturn(){
   const now = new Date();
 
   const headers = [
-    'Name',
-    'Company/Garage',
-    'Location',
-    'Reel Name',
-    'Fiber Count',
-    'Inside Footage',
-    'Outside Footage',
-    'Total Footage'
-  ];
+  'Company Garage',
+  'Reel ID',
+  'Fiber Count',
+  'Inside Footage',
+  'Outside Footage',
+  'Total Footage',
+  'Scrapped'
+];
 
   const data = [
-    headers,
-    ...returnSession.map(e => ([
-      e.name,
-      e.company,
-      e.location,
-      e.reel,
-      Number(e.fiber),
-      Number(e.inside),
-      Number(e.outside),
-      Number(e.total)
-    ]))
-  ];
+  headers,
+  ...returnSession.map(e => ([
+    e.company,
+    e.reel,
+    Number(e.fiber),
+    Number(e.inside),
+    Number(e.outside),
+    Number(e.total),
+    'Y'
+  ]))
+];
 
   const ws = XLSX.utils.aoa_to_sheet(data);
 
@@ -1028,11 +1023,16 @@ function exportReturn(){
   const file = new File([blob], filename, { type: blob.type });
 
   // Share Sheet if supported, otherwise download
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    navigator.share({ files: [file], title: filename })
-      .then(() => setBanner("ok", "Export created"))
-      .catch(() => setBanner("info", "Share canceled"));
-  } else {
+ if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  navigator.share({
+    files: [file],
+    title: filename,
+    text: "Scrap Reel Log"
+  })
+    .then(() => setBanner("ok", "Export created"))
+    .catch(() => setBanner("info", "Share canceled"));
+}
+  else {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1133,9 +1133,7 @@ function exportReturn(){
 });
 
  // Return listeners
-returnName?.addEventListener('input', updateReturn);
-returnCompany?.addEventListener('input', updateReturn);
-  
+ 
  returnNext?.addEventListener('click', () => {
 
   const sessionCard = returnNext.closest('.card');
@@ -1146,15 +1144,15 @@ returnCompany?.addEventListener('input', updateReturn);
   if (returnEntryWrap) returnEntryWrap.hidden = false;
 
 });
- 
-returnReelName?.addEventListener('input', () => {
+
+  returnCompany?.addEventListener('input', updateReturn);
+  returnReelName?.addEventListener('input', () => {
   returnReelName.value = returnReelName.value.toUpperCase();
 });
 
 returnReelName?.addEventListener('input', updateReturn);
 
 fiberCount?.addEventListener('input', updateReturn);
-returnLocation?.addEventListener('input', updateReturn);
 insideFt?.addEventListener('input', updateReturn);
 outsideFt?.addEventListener('input', updateReturn);
 
@@ -1173,11 +1171,9 @@ function wireAutoNext(fields){
 }
 
 wireAutoNext([
-  returnName,
   returnCompany,
   returnReelName,
   fiberCount,
-  returnLocation,
   insideFt,
   outsideFt
 ]);
@@ -1193,15 +1189,13 @@ wireAutoNext([
   if(returnAdd.disabled) return;
 
   const entry = {
-    name: (returnName?.value || '').trim(),
-    company: (returnCompany?.value || '').trim(),
-    reel: (returnReelName?.value || '').trim(),
-    fiber: (fiberCount?.value || '').trim(),
-    location: (returnLocation?.value || '').trim(),
-    inside: (insideFt?.value || '').trim(),
-    outside: (outsideFt?.value || '').trim(),
-    total: (totalFt?.value || '').trim()
-  };
+  company: (returnCompany?.value || '').trim(),
+  reel: (returnReelName?.value || '').trim(),
+  fiber: (fiberCount?.value || '').trim(),
+  inside: (insideFt?.value || '').trim(),
+  outside: (outsideFt?.value || '').trim(),
+  total: (totalFt?.value || '').trim()
+};
 
   returnSession.unshift(entry);
   renderReturnSession();
