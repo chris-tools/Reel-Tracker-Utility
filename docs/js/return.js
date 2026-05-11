@@ -977,10 +977,10 @@ const file = new File([blob], filename, { type: 'text/csv' });
 if (navigator.canShare && navigator.canShare({ files: [file] })) {
 
   navigator.share({
-    files: [file],
-    title: filename,
-    text: 'RTU Scrap Export'
-  })
+  files: [file],
+  title: 'RTU Scrap Export',
+  text: 'RTU Scrap Export'
+})
   .then(() => {
     setBanner('ok', 'CSV export created');
   })
